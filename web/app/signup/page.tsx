@@ -1,6 +1,8 @@
 
 import Link from 'next/link'
 import { signup } from '../auth/actions'
+import { SocialAuthButtons } from '../auth/SocialAuthButtons'
+import { PhoneLogin } from '../auth/PhoneLogin'
 
 export default async function SignupPage({ searchParams }: { searchParams: Promise<{ role?: string; error?: string }> }) {
     const params = await searchParams;
@@ -96,6 +98,9 @@ export default async function SignupPage({ searchParams }: { searchParams: Promi
                         </button>
                     </div>
                 </form>
+
+                <SocialAuthButtons />
+                <PhoneLogin />
 
                 <p className="mt-10 text-center text-sm text-neutral-500 dark:text-neutral-400">
                     Already have an account?{' '}

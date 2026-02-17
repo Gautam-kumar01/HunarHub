@@ -1,6 +1,8 @@
 
 import Link from 'next/link'
 import { login } from '../auth/actions'
+import { SocialAuthButtons } from '../auth/SocialAuthButtons'
+import { PhoneLogin } from '../auth/PhoneLogin'
 
 export default async function LoginPage({ searchParams }: { searchParams: Promise<{ error?: string }> }) {
     const params = await searchParams;
@@ -69,6 +71,9 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
                         </button>
                     </div>
                 </form>
+
+                <SocialAuthButtons />
+                <PhoneLogin />
 
                 <p className="mt-10 text-center text-sm text-neutral-500 dark:text-neutral-400">
                     Not a member?{' '}

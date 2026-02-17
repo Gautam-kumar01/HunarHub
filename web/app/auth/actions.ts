@@ -8,8 +8,6 @@ import { createClient } from '@/utils/supabase/server'
 export async function login(formData: FormData) {
     const supabase = await createClient()
 
-    // type-casting here for convenience
-    // in a real app, you might want to validate this with Zod
     const data = {
         email: formData.get('email') as string,
         password: formData.get('password') as string,
@@ -18,7 +16,14 @@ export async function login(formData: FormData) {
     const { error } = await supabase.auth.signInWithPassword(data)
 
     if (error) {
-        redirect('/login?error=Invalid Credentials')
+        console.error('Login error:', error)
+        const rawMessage = error.message || 'Invalid credentials'
+        const lower = rawMessage.toLowerCase()
+        let message = rawMessage
+        if (lower.includes('email') && lower.includes('confirm')) {
+            message = 'Please verify your email from the link we sent before logging in.'
+        }
+        redirect(`/login?error=${encodeURIComponent(message)}`)
     }
 
     revalidatePath('/', 'layout')
