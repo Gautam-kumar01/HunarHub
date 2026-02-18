@@ -216,3 +216,233 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 CREATE TRIGGER on_auth_user_created
   AFTER INSERT ON auth.users
   FOR EACH ROW EXECUTE PROCEDURE public.handle_new_user();
+
+-------------------------------------------------------------------------------
+-- 8. Students Table (detail profile for student users)
+-------------------------------------------------------------------------------
+
+CREATE TABLE students (
+  id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+  full_name TEXT,
+  email TEXT,
+  college TEXT,
+  education TEXT,
+  skills TEXT[] DEFAULT '{}',
+  experience TEXT,
+  resume_url TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+ALTER TABLE students ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Students can view own record"
+  ON students FOR SELECT
+  USING (auth.uid() = id);
+
+CREATE POLICY "Students can insert own record"
+  ON students FOR INSERT
+  WITH CHECK (auth.uid() = id);
+
+CREATE POLICY "Students can update own record"
+  ON students FOR UPDATE
+  USING (auth.uid() = id)
+  WITH CHECK (auth.uid() = id);
+
+-------------------------------------------------------------------------------
+-- 9. Companies Table (detail profile for company users)
+-------------------------------------------------------------------------------
+
+CREATE TABLE companies (
+  id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+  company_name TEXT NOT NULL,
+  official_email TEXT,
+  website TEXT,
+  linkedin TEXT,
+  industry TEXT,
+  location TEXT,
+  company_size TEXT,
+  description TEXT,
+  verified BOOLEAN DEFAULT FALSE,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+ALTER TABLE companies ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Companies can view own record"
+  ON companies FOR SELECT
+  USING (auth.uid() = id);
+
+CREATE POLICY "Companies can insert own record"
+  ON companies FOR INSERT
+  WITH CHECK (auth.uid() = id);
+
+CREATE POLICY "Companies can update own record"
+  ON companies FOR UPDATE
+  USING (auth.uid() = id)
+  WITH CHECK (auth.uid() = id);
+
+-- Admins can view all companies
+CREATE POLICY "Admins can view all companies"
+  ON companies FOR SELECT
+  TO authenticated
+  USING (
+    EXISTS (
+      SELECT 1
+      FROM profiles
+      WHERE profiles.id = auth.uid()
+        AND profiles.role = 'admin'
+    )
+  );
+
+-- Admins can update verified flag
+CREATE POLICY "Admins can verify companies"
+  ON companies FOR UPDATE
+  TO authenticated
+  USING (
+    EXISTS (
+      SELECT 1
+      FROM profiles
+      WHERE profiles.id = auth.uid()
+        AND profiles.role = 'admin'
+    )
+  )
+  WITH CHECK (
+    EXISTS (
+      SELECT 1
+      FROM profiles
+      WHERE profiles.id = auth.uid()
+        AND profiles.role = 'admin'
+    )
+  );
+
+-------------------------------------------------------------------------------
+-- 10. Jobs Table
+-------------------------------------------------------------------------------
+
+CREATE TYPE job_type AS ENUM ('internship', 'fulltime');
+
+CREATE TABLE jobs (
+  id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+  company_id UUID NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
+  title TEXT NOT NULL,
+  type job_type NOT NULL,
+  category TEXT,
+  skills_required TEXT[] DEFAULT '{}',
+  location TEXT,
+  remote_type TEXT,
+  duration TEXT,
+  salary TEXT,
+  paid BOOLEAN,
+  openings INTEGER,
+  deadline DATE,
+  description TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+ALTER TABLE jobs ENABLE ROW LEVEL SECURITY;
+
+-- Everyone can view jobs
+CREATE POLICY "Jobs are viewable by everyone"
+  ON jobs FOR SELECT
+  USING (true);
+
+-- Only verified companies can post jobs
+CREATE POLICY "Verified companies can create jobs"
+  ON jobs FOR INSERT
+  TO authenticated
+  WITH CHECK (
+    EXISTS (
+      SELECT 1
+      FROM companies c
+      WHERE c.id = company_id
+        AND c.id = auth.uid()
+        AND c.verified = TRUE
+    )
+  );
+
+-- Companies can update their own jobs
+CREATE POLICY "Companies can update own jobs"
+  ON jobs FOR UPDATE
+  TO authenticated
+  USING (
+    EXISTS (
+      SELECT 1
+      FROM companies c
+      WHERE c.id = jobs.company_id
+        AND c.id = auth.uid()
+    )
+  )
+  WITH CHECK (
+    EXISTS (
+      SELECT 1
+      FROM companies c
+      WHERE c.id = jobs.company_id
+        AND c.id = auth.uid()
+    )
+  );
+
+-------------------------------------------------------------------------------
+-- 11. Job Applications Table
+-------------------------------------------------------------------------------
+
+CREATE TYPE job_application_status AS ENUM ('applied', 'shortlisted', 'rejected', 'selected');
+
+CREATE TABLE job_applications (
+  id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+  job_id UUID NOT NULL REFERENCES jobs(id) ON DELETE CASCADE,
+  student_id UUID NOT NULL REFERENCES students(id) ON DELETE CASCADE,
+  resume_url TEXT,
+  cover_letter TEXT,
+  status job_application_status DEFAULT 'applied',
+  applied_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+ALTER TABLE job_applications ENABLE ROW LEVEL SECURITY;
+
+-- Students can see their own applications
+CREATE POLICY "Students can view own job applications"
+  ON job_applications FOR SELECT
+  USING (auth.uid() = student_id);
+
+-- Companies can see applications for their jobs
+CREATE POLICY "Companies can view applications for their jobs"
+  ON job_applications FOR SELECT
+  TO authenticated
+  USING (
+    EXISTS (
+      SELECT 1
+      FROM jobs j
+      JOIN companies c ON c.id = j.company_id
+      WHERE j.id = job_applications.job_id
+        AND c.id = auth.uid()
+    )
+  );
+
+-- Students can apply to jobs
+CREATE POLICY "Students can apply to jobs"
+  ON job_applications FOR INSERT
+  TO authenticated
+  WITH CHECK (auth.uid() = student_id);
+
+-- Companies can update application status
+CREATE POLICY "Companies can update job application status"
+  ON job_applications FOR UPDATE
+  TO authenticated
+  USING (
+    EXISTS (
+      SELECT 1
+      FROM jobs j
+      JOIN companies c ON c.id = j.company_id
+      WHERE j.id = job_applications.job_id
+        AND c.id = auth.uid()
+    )
+  )
+  WITH CHECK (
+    EXISTS (
+      SELECT 1
+      FROM jobs j
+      JOIN companies c ON c.id = j.company_id
+      WHERE j.id = job_applications.job_id
+        AND c.id = auth.uid()
+    )
+  );

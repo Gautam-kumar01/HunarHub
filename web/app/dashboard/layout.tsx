@@ -25,7 +25,7 @@ export default async function DashboardLayout({
         .eq('id', user.id)
         .single()
 
-    const isRecruiter = profile?.role === 'recruiter'
+    const isRecruiter = profile?.role === 'recruiter' || profile?.role === 'company'
 
     return (
         <div className="min-h-screen bg-gray-50 dark:bg-neutral-900 flex">
@@ -50,8 +50,8 @@ export default async function DashboardLayout({
 
                     {isRecruiter ? (
                         <>
-                            <NavLink href="/dashboard/post-job" label="Post New Job" icon="✍️" />
-                            <NavLink href="/dashboard/applications" label="Applications" icon="box" />
+                            <NavLink href="/dashboard/jobs" label="Jobs" icon="✍️" />
+                            <NavLink href="/dashboard/job-applications" label="Job Applications" icon="box" />
                             <NavLink href="/dashboard/company" label="Company Profile" icon="🏢" />
                         </>
                     ) : (

@@ -27,7 +27,30 @@ export async function login(formData: FormData) {
     }
 
     revalidatePath('/', 'layout')
-    redirect('/dashboard')
+
+    const {
+        data: { user },
+    } = await supabase.auth.getUser()
+
+    if (!user) {
+        redirect('/login?error=Authentication+required')
+    }
+
+    const { data: profile } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', user.id)
+        .single()
+
+    if (profile?.role === 'admin') {
+        redirect('/dashboard?role=admin')
+    }
+
+    if (profile?.role === 'recruiter' || profile?.role === 'company') {
+        redirect('/dashboard?role=company')
+    }
+
+    redirect('/dashboard?role=student')
 }
 
 export async function signup(formData: FormData) {
@@ -39,7 +62,7 @@ export async function signup(formData: FormData) {
         email: formData.get('email') as string,
         password: formData.get('password') as string,
         full_name: formData.get('full_name') as string,
-        role: formData.get('role') as string, // 'student' or 'recruiter'
+        role: formData.get('role') as string, // 'student' | 'company' | 'admin'
     }
 
     const { error } = await supabase.auth.signUp({

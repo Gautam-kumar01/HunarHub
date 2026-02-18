@@ -53,9 +53,9 @@ export default async function ProfilePage({
                 </p>
             </div>
 
-            {/* Profile Edit Form */}
+            {/* Profile + Student Details Form */}
             <div className="bg-white dark:bg-neutral-800 rounded-xl border border-gray-200 dark:border-neutral-700 shadow-sm p-6 mb-8">
-                <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-6">Profile Information</h2>
+                <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-6">Profile & Student Details</h2>
 
                 <form action={updateProfile} className="space-y-6">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -88,6 +88,33 @@ export default async function ProfilePage({
                         </div>
                     </div>
 
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label htmlFor="college" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                College
+                            </label>
+                            <input
+                                type="text"
+                                name="college"
+                                id="college"
+                                className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:bg-neutral-900 dark:border-neutral-600 dark:text-white p-2 border"
+                                placeholder="Your college name"
+                            />
+                        </div>
+                        <div>
+                            <label htmlFor="education" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                Education
+                            </label>
+                            <input
+                                type="text"
+                                name="education"
+                                id="education"
+                                className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:bg-neutral-900 dark:border-neutral-600 dark:text-white p-2 border"
+                                placeholder="B.Tech CSE, 3rd Year"
+                            />
+                        </div>
+                    </div>
+
                     <div>
                         <label htmlFor="bio" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                             Bio
@@ -112,6 +139,32 @@ export default async function ProfilePage({
                             id="skills"
                             defaultValue={profile?.skills?.join(', ') || ''}
                             placeholder="React, Node.js, Python, Machine Learning (comma separated)"
+                            className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:bg-neutral-900 dark:border-neutral-600 dark:text-white p-2 border"
+                        />
+                    </div>
+
+                    <div>
+                        <label htmlFor="experience" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                            Experience
+                        </label>
+                        <textarea
+                            name="experience"
+                            id="experience"
+                            rows={3}
+                            placeholder="Internships, freelance work, hackathons..."
+                            className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:bg-neutral-900 dark:border-neutral-600 dark:text-white p-2 border"
+                        />
+                    </div>
+
+                    <div>
+                        <label htmlFor="resume_url" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                            Resume URL
+                        </label>
+                        <input
+                            type="url"
+                            name="resume_url"
+                            id="resume_url"
+                            placeholder="https://drive.google.com/..."
                             className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:bg-neutral-900 dark:border-neutral-600 dark:text-white p-2 border"
                         />
                     </div>
