@@ -43,7 +43,7 @@ export default async function JobsPage() {
                                     {job.paid ? job.salary || 'Paid' : 'Unpaid'}
                                 </span>
                                 <Link
-                                    href={`/internships/${job.id}`}
+                                    href={`/jobs/${job.id}`}
                                     className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-medium"
                                 >
                                     View & Apply
@@ -64,4 +64,3 @@ export default async function JobsPage() {
         </div>
     )
 }
-

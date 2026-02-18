@@ -1,6 +1,22 @@
 import { createClient } from '@/utils/supabase/server'
 import { redirect } from 'next/navigation'
 
+type JobApplicationRow = {
+    id: string
+    job_id: string
+    student_id: string
+    status: string
+    applied_at: string
+    job: {
+        title: string
+        location: string | null
+    } | null
+    student?: {
+        full_name: string | null
+        email: string | null
+    } | null
+}
+
 export default async function JobApplicationsDashboardPage() {
     const supabase = await createClient()
 
@@ -20,35 +36,43 @@ export default async function JobApplicationsDashboardPage() {
 
     const isCompany = profile?.role === 'recruiter' || profile?.role === 'company'
 
-    let applications: any[] = []
+    let applications: JobApplicationRow[] = []
 
     if (isCompany) {
         const { data } = await supabase
             .from('job_applications')
-            .select(`
+            .select(
+                `
                 *,
                 job:job_id (
                     title,
                     location
+                ),
+                student:student_id (
+                    full_name,
+                    email
                 )
-            `)
+            `
+            )
             .order('applied_at', { ascending: false })
 
-        applications = data || []
+        applications = (data as JobApplicationRow[] | null) || []
     } else {
         const { data } = await supabase
             .from('job_applications')
-            .select(`
+            .select(
+                `
                 *,
                 job:job_id (
                     title,
                     location
                 )
-            `)
+            `
+            )
             .eq('student_id', user.id)
             .order('applied_at', { ascending: false })
 
-        applications = data || []
+        applications = (data as JobApplicationRow[] | null) || []
     }
 
     return (
@@ -84,9 +108,16 @@ export default async function JobApplicationsDashboardPage() {
                             <div key={app.id} className="grid grid-cols-12 gap-4 px-6 py-4 items-center text-sm">
                                 <div className="col-span-4">
                                     {isCompany ? (
-                                        <span className="text-gray-900 dark:text-white">
-                                            {app.student_id}
-                                        </span>
+                                        <div className="flex flex-col">
+                                            <span className="text-gray-900 dark:text-white">
+                                                {app.student?.full_name || 'Unknown candidate'}
+                                            </span>
+                                            {app.student?.email && (
+                                                <span className="text-xs text-gray-500 dark:text-gray-400">
+                                                    {app.student.email}
+                                                </span>
+                                            )}
+                                        </div>
                                     ) : (
                                         <span className="text-gray-900 dark:text-white">
                                             {app.job?.title}
@@ -116,4 +147,3 @@ export default async function JobApplicationsDashboardPage() {
         </div>
     )
 }
-
