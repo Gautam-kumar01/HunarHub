@@ -1,11 +1,12 @@
 import { createClient } from '@/utils/supabase/server'
 import { redirect } from 'next/navigation'
+import JobStatusSelect from './StatusSelect'
 
 type JobApplicationRow = {
     id: string
     job_id: string
     student_id: string
-    status: string
+    status: 'applied' | 'shortlisted' | 'rejected' | 'selected'
     applied_at: string
     job: {
         title: string
@@ -134,10 +135,14 @@ export default async function JobApplicationsDashboardPage() {
                                 <div className="col-span-2 text-xs text-gray-500 dark:text-gray-400">
                                     {new Date(app.applied_at).toLocaleDateString()}
                                 </div>
-                                <div className="col-span-2">
-                                    <span className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-indigo-50 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300 capitalize">
-                                        {app.status}
-                                    </span>
+                                <div className="col-span-2 flex justify-end">
+                                    {isCompany ? (
+                                        <JobStatusSelect id={app.id} currentStatus={app.status} />
+                                    ) : (
+                                        <span className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-indigo-50 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300 capitalize">
+                                            {app.status}
+                                        </span>
+                                    )}
                                 </div>
                             </div>
                         ))}
