@@ -8,6 +8,7 @@ type JobApplicationRow = {
     student_id: string
     status: 'applied' | 'shortlisted' | 'rejected' | 'selected'
     applied_at: string
+    resume_url?: string | null
     job: {
         title: string
         location: string | null
@@ -135,9 +136,21 @@ export default async function JobApplicationsDashboardPage() {
                                 <div className="col-span-2 text-xs text-gray-500 dark:text-gray-400">
                                     {new Date(app.applied_at).toLocaleDateString()}
                                 </div>
-                                <div className="col-span-2 flex justify-end">
+                                <div className="col-span-2 flex justify-end items-center gap-2">
                                     {isCompany ? (
-                                        <JobStatusSelect id={app.id} currentStatus={app.status} />
+                                        <>
+                                            <JobStatusSelect id={app.id} currentStatus={app.status} />
+                                            {app.resume_url && (
+                                                <a
+                                                    href={app.resume_url}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className="text-gray-400 hover:text-indigo-600"
+                                                >
+                                                    📄
+                                                </a>
+                                            )}
+                                        </>
                                     ) : (
                                         <span className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-indigo-50 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300 capitalize">
                                             {app.status}

@@ -2,6 +2,7 @@ import { createClient } from '@/utils/supabase/server'
 import { redirect } from 'next/navigation'
 import { updateProfile } from './actions'
 import Link from 'next/link'
+import ResumeUploadField from './ResumeUploadField'
 
 export default async function ProfilePage({
     searchParams,
@@ -156,18 +157,7 @@ export default async function ProfilePage({
                         />
                     </div>
 
-                    <div>
-                        <label htmlFor="resume_url" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                            Resume URL
-                        </label>
-                        <input
-                            type="url"
-                            name="resume_url"
-                            id="resume_url"
-                            placeholder="https://drive.google.com/..."
-                            className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:bg-neutral-900 dark:border-neutral-600 dark:text-white p-2 border"
-                        />
-                    </div>
+                    <ResumeUploadField initialUrl={profile?.resume_url || ''} />
 
                     <input type="hidden" name="avatar_url" value={profile?.avatar_url || ''} />
 

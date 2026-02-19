@@ -77,18 +77,65 @@ export default function ApplyButton({ internshipId, existingApplication }: { int
                         </p>
 
                         <form onSubmit={handleApply} className="space-y-4">
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                                    Resume / Portfolio Link
-                                </label>
-                                <input
-                                    type="url"
-                                    required
-                                    value={resumeLink}
-                                    onChange={(e) => setResumeLink(e.target.value)}
-                                    placeholder="https://drive.google.com/..."
-                                    className="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:bg-neutral-900 dark:border-neutral-600 dark:text-white p-2 border"
-                                />
+                            <div className="space-y-2">
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                        Upload Resume
+                                    </label>
+                                    <input
+                                        type="file"
+                                        accept=".pdf,.doc,.docx"
+                                        onChange={async (e) => {
+                                            const file = e.target.files?.[0]
+                                            if (!file) return
+
+                                            setLoading(true)
+
+                                            const {
+                                                data: { user },
+                                            } = await supabase.auth.getUser()
+
+                                            if (!user) {
+                                                setLoading(false)
+                                                router.push('/login')
+                                                return
+                                            }
+
+                                            const fileExt = file.name.split('.').pop()
+                                            const filePath = `${user.id}/${Date.now()}.${fileExt}`
+
+                                            const { error: uploadError } = await supabase.storage.from('resumes').upload(filePath, file)
+
+                                            if (uploadError) {
+                                                alert('Failed to upload resume: ' + uploadError.message)
+                                                setLoading(false)
+                                                return
+                                            }
+
+                                            const { data } = supabase.storage.from('resumes').getPublicUrl(filePath)
+
+                                            if (data?.publicUrl) {
+                                                setResumeLink(data.publicUrl)
+                                            }
+
+                                            setLoading(false)
+                                        }}
+                                        className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                        Resume / Portfolio Link
+                                    </label>
+                                    <input
+                                        type="url"
+                                        required
+                                        value={resumeLink}
+                                        onChange={(e) => setResumeLink(e.target.value)}
+                                        placeholder="https://..."
+                                        className="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:bg-neutral-900 dark:border-neutral-600 dark:text-white p-2 border"
+                                    />
+                                </div>
                             </div>
 
                             <div>
