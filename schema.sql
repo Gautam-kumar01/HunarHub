@@ -482,3 +482,101 @@ CREATE POLICY "Companies can update job application status"
         AND c.id = auth.uid()
     )
   );
+
+INSERT INTO storage.buckets (id, name, public)
+VALUES ('resumes', 'resumes', true)
+ON CONFLICT (id) DO NOTHING;
+
+CREATE POLICY "Public read access to resumes"
+  ON storage.objects FOR SELECT
+  USING (bucket_id = 'resumes');
+
+CREATE POLICY "Authenticated users can upload resumes"
+  ON storage.objects FOR INSERT
+  TO authenticated
+  WITH CHECK (
+    bucket_id = 'resumes'
+    AND auth.uid()::text = split_part(name, '/', 1)
+  );
+
+CREATE POLICY "Owners can update their resumes"
+  ON storage.objects FOR UPDATE
+  TO authenticated
+  USING (
+    bucket_id = 'resumes'
+    AND auth.uid()::text = split_part(name, '/', 1)
+  )
+  WITH CHECK (
+    bucket_id = 'resumes'
+    AND auth.uid()::text = split_part(name, '/', 1)
+  );
+
+CREATE POLICY "Owners can delete their resumes"
+  ON storage.objects FOR DELETE
+  TO authenticated
+  USING (
+    bucket_id = 'resumes'
+    AND auth.uid()::text = split_part(name, '/', 1)
+  );
+
+CREATE TABLE plans (
+  id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+  slug TEXT UNIQUE NOT NULL,
+  name TEXT NOT NULL,
+  description TEXT,
+  monthly_price_inr INTEGER,
+  currency TEXT DEFAULT 'INR',
+  max_jobs_per_month INTEGER,
+  featured_listings BOOLEAN DEFAULT FALSE,
+  priority_ranking BOOLEAN DEFAULT FALSE,
+  ai_resume_score BOOLEAN DEFAULT FALSE,
+  skill_tests BOOLEAN DEFAULT FALSE,
+  chat_enabled BOOLEAN DEFAULT FALSE,
+  interview_scheduling BOOLEAN DEFAULT FALSE,
+  certificate_generation BOOLEAN DEFAULT FALSE,
+  company_rating_enabled BOOLEAN DEFAULT FALSE,
+  stripe_price_id TEXT,
+  razorpay_plan_id TEXT,
+  is_active BOOLEAN DEFAULT TRUE,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE company_subscriptions (
+  id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+  company_id UUID NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
+  plan_id UUID NOT NULL REFERENCES plans(id),
+  status TEXT NOT NULL DEFAULT 'active',
+  current_period_start TIMESTAMPTZ,
+  current_period_end TIMESTAMPTZ,
+  cancel_at_period_end BOOLEAN DEFAULT FALSE,
+  stripe_customer_id TEXT,
+  stripe_subscription_id TEXT,
+  razorpay_customer_id TEXT,
+  razorpay_subscription_id TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+ALTER TABLE plans ENABLE ROW LEVEL SECURITY;
+ALTER TABLE company_subscriptions ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Plans are readable by everyone"
+  ON plans FOR SELECT
+  USING (true);
+
+CREATE POLICY "Company can view own subscription"
+  ON company_subscriptions FOR SELECT
+  TO authenticated
+  USING (company_id = auth.uid());
+
+INSERT INTO plans (slug, name, description, monthly_price_inr, max_jobs_per_month, featured_listings, priority_ranking)
+VALUES
+  ('free', 'Free', 'Free plan with limited job posts', 0, 1, FALSE, FALSE),
+  ('premium', 'Premium', 'Unlimited job posts with priority features', 49900, NULL, TRUE, TRUE)
+ON CONFLICT (slug) DO UPDATE
+SET name = EXCLUDED.name,
+    description = EXCLUDED.description,
+    monthly_price_inr = EXCLUDED.monthly_price_inr,
+    max_jobs_per_month = EXCLUDED.max_jobs_per_month,
+    featured_listings = EXCLUDED.featured_listings,
+    priority_ranking = EXCLUDED.priority_ranking;

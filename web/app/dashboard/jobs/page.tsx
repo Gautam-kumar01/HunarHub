@@ -29,6 +29,37 @@ export default async function DashboardJobsPage() {
         .eq('company_id', user.id)
         .order('created_at', { ascending: false })
 
+    const { data: subscription } = await supabase
+        .from('company_subscriptions')
+        .select(
+            `
+            status,
+            plan:plan_id (
+                slug,
+                max_jobs_per_month
+            )
+        `
+        )
+        .eq('company_id', user.id)
+        .eq('status', 'active')
+        .maybeSingle()
+
+    const planSlug = subscription?.plan?.slug || 'free'
+    const maxJobsPerMonth = subscription?.plan?.max_jobs_per_month ?? 1
+
+    const now = new Date()
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString()
+    const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 1).toISOString()
+
+    const { count: jobsThisMonth } = await supabase
+        .from('jobs')
+        .select('*', { count: 'exact', head: true })
+        .eq('company_id', user.id)
+        .gte('created_at', monthStart)
+        .lt('created_at', monthEnd)
+
+    const reachedLimit = maxJobsPerMonth !== null && typeof jobsThisMonth === 'number' && jobsThisMonth >= maxJobsPerMonth
+
     return (
         <div className="max-w-4xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
             <div className="mb-8">
@@ -39,7 +70,27 @@ export default async function DashboardJobsPage() {
             </div>
 
             <div className="bg-white dark:bg-neutral-800 rounded-xl border border-gray-200 dark:border-neutral-700 shadow-sm p-6 mb-8">
-                <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-6">Post a Job</h2>
+                <div className="flex items-center justify-between mb-6">
+                    <h2 className="text-xl font-bold text-gray-900 dark:text-white">Post a Job</h2>
+                    <div className="flex items-center gap-3 text-xs">
+                        <span className="px-2 py-1 rounded-full bg-gray-100 dark:bg-neutral-700 text-gray-700 dark:text-gray-200">
+                            Plan: {planSlug === 'premium' ? 'Premium' : 'Free'}
+                        </span>
+                        {typeof jobsThisMonth === 'number' && maxJobsPerMonth !== null && (
+                            <span className="text-gray-500 dark:text-gray-400">
+                                {jobsThisMonth}/{maxJobsPerMonth} jobs this month
+                            </span>
+                        )}
+                        {reachedLimit && (
+                            <button
+                                type="button"
+                                className="px-3 py-1 rounded-md bg-amber-500 text-white text-xs font-medium"
+                            >
+                                Upgrade to Premium
+                            </button>
+                        )}
+                    </div>
+                </div>
 
                 <form action={createJob} className="space-y-6">
                     <div>
@@ -217,4 +268,3 @@ export default async function DashboardJobsPage() {
         </div>
     )
 }
-

@@ -25,6 +25,38 @@ export async function createJob(formData: FormData) {
         redirect('/dashboard?error=Only companies can post jobs')
     }
 
+    const { data: subscription } = await supabase
+        .from('company_subscriptions')
+        .select(
+            `
+            status,
+            plan:plan_id (
+                slug,
+                max_jobs_per_month
+            )
+        `
+        )
+        .eq('company_id', user.id)
+        .eq('status', 'active')
+        .maybeSingle()
+
+    const maxJobsPerMonth = subscription?.plan?.max_jobs_per_month ?? 1
+
+    const now = new Date()
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString()
+    const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 1).toISOString()
+
+    const { count: jobsThisMonth } = await supabase
+        .from('jobs')
+        .select('*', { count: 'exact', head: true })
+        .eq('company_id', user.id)
+        .gte('created_at', monthStart)
+        .lt('created_at', monthEnd)
+
+    if (maxJobsPerMonth !== null && typeof jobsThisMonth === 'number' && jobsThisMonth >= maxJobsPerMonth) {
+        redirect('/dashboard/jobs?error=Job+posting+limit+reached.+Upgrade+to+Premium+for+unlimited+posts.')
+    }
+
     const title = formData.get('title') as string
     const type = formData.get('type') as string
     const category = formData.get('category') as string
@@ -66,4 +98,3 @@ export async function createJob(formData: FormData) {
     revalidatePath('/dashboard')
     redirect('/dashboard?message=Job posted successfully')
 }
-
