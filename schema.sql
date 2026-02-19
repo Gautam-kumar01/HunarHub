@@ -135,6 +135,42 @@ CREATE POLICY "Recruiters can view applications for their internships"
     )
   );
 
+INSERT INTO storage.buckets (id, name, public)
+VALUES ('resumes', 'resumes', true)
+ON CONFLICT (id) DO NOTHING;
+
+CREATE POLICY "Public read access to resumes"
+  ON storage.objects FOR SELECT
+  USING (bucket_id = 'resumes');
+
+CREATE POLICY "Authenticated users can upload resumes"
+  ON storage.objects FOR INSERT
+  TO authenticated
+  WITH CHECK (
+    bucket_id = 'resumes'
+    AND auth.uid()::text = split_part(name, '/', 1)
+  );
+
+CREATE POLICY "Owners can update their resumes"
+  ON storage.objects FOR UPDATE
+  TO authenticated
+  USING (
+    bucket_id = 'resumes'
+    AND auth.uid()::text = split_part(name, '/', 1)
+  )
+  WITH CHECK (
+    bucket_id = 'resumes'
+    AND auth.uid()::text = split_part(name, '/', 1)
+  );
+
+CREATE POLICY "Owners can delete their resumes"
+  ON storage.objects FOR DELETE
+  TO authenticated
+  USING (
+    bucket_id = 'resumes'
+    AND auth.uid()::text = split_part(name, '/', 1)
+  );
+
 -- Students can create applications
 CREATE POLICY "Students can apply" 
   ON applications FOR INSERT 
