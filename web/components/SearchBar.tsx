@@ -2,7 +2,7 @@
 'use client'
 
 import { useRouter, useSearchParams } from 'next/navigation'
-import { useState, useTransition } from 'react'
+import { useState, useTransition } from 'react'  
 
 export default function SearchBar() {
     const router = useRouter()
