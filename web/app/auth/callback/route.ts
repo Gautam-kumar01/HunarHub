@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
         const { error } = await supabase.auth.verifyOtp({
             type,
             token_hash,
-        })
+        })  
         if (!error) {
             // redirect user to specified redirect URL or root of app
             return NextResponse.redirect(new URL(next, request.url))
